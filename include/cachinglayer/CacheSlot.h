@@ -447,7 +447,10 @@ class CacheSlot final : public std::enable_shared_from_this<CacheSlot<CellT>> {
 
             auto run_load_internal = [&]() {
                 if (ctx && ctx->cancellation_token.isCancellationRequested()) {
-                    throw std::runtime_error("Operation cancelled, stop loading cache cells");
+                    // Throw with the FollyCancel code so cancellation survives
+                    // to the consumer as a typed SegcoreError instead of
+                    // collapsing to UnexpectedError(2001) at the boundary.
+                    ThrowInfo(ErrorCode::FollyCancel, "Operation cancelled, stop loading cache cells");
                 }
                 start = std::chrono::steady_clock::now();
                 auto results = translator_->get_cells(ctx, loading_cids);
